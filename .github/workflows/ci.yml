@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: the-orrery/.github/.github/workflows/python-ci.yml@v7
+    with:
+      python-version: "3.12"
+      ruff-extend-ignore: "['TRY003','RUF001','RUF002']"
+      ruff-extend-per-file-ignores: "{'tests/**'=['ARG'],'**/cli.py'=['PLR0913']}"
