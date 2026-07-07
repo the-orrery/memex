@@ -5,8 +5,8 @@ import sys
 from typing import Any
 
 import typer
-
 from orrery_heartbeat import check_update
+
 from memex import telemetry
 from memex.logging_setup import setup_logging
 
