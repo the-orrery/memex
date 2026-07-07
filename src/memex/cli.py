@@ -6,6 +6,7 @@ from typing import Any
 
 import typer
 
+from orrery_heartbeat import check_update
 from memex import telemetry
 from memex.logging_setup import setup_logging
 
@@ -223,6 +224,7 @@ def recall_export(
     from memex.recall import recall as do_recall
     from memex.semantic import SemanticUnavailable
 
+
     facets = Facets(domain=domain, kind=kind, tag=tag)
     try:
         res = do_recall(
@@ -259,6 +261,7 @@ def stats() -> None:
 
 
 def run() -> None:
+    check_update("memex", "the-orrery/memex")
     """Console-script entry: 在 per-invocation telemetry 捕获下跑 CLI。
     wrapper 负责 stdout/stderr 捕获 + exit-code 映射, 然后向本地 SQLite ledger 写一行
     ($MEMEX_TELEMETRY_OFF 或 DO_NOT_TRACK 关闭)。"""
