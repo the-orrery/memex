@@ -1,7 +1,7 @@
 """中文分词(lexical lane)。
 
 jieba `cut_for_search`(细粒度重叠子词,HMM off)
-+ 后置丢长 term(>40)+ LowerCaser。
++ 后置丢长 token(>40)+ LowerCaser。
 """
 
 from __future__ import annotations
@@ -12,8 +12,8 @@ import jieba
 
 jieba.setLogLevel(60)
 
-# 丢长度 >40 的 term(对应 Tantivy RemoveLongFilter 语义)。
-_MAX_TERM_LEN = 40
+# 丢长度 >40 的 token(对应 Tantivy RemoveLongFilter 语义)。
+_MAX_TOKEN_LEN = 40
 # raw 字段(object_key / path)的 slug 切分:在 :/_-. 处断词。
 _SLUG_SPLIT = re.compile(r"[:/_\-.]+")
 
@@ -25,7 +25,7 @@ def tokenize(text: str) -> list[str]:
     out: list[str] = []
     for raw in jieba.cut_for_search(text, HMM=False):
         t = raw.strip().lower()
-        if t and len(t) <= _MAX_TERM_LEN and not t.isspace():
+        if t and len(t) <= _MAX_TOKEN_LEN and not t.isspace():
             out.append(t)
     return out
 

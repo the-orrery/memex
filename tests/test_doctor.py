@@ -145,7 +145,7 @@ def test_alert_detail_front_loads_fix(tmp_path: Path) -> None:
     fake = FakeQdrant([_pt(f"repo:d:n{i}") for i in range(20)])
     rep = check_compiled_consistency(fake, tmp_path, collection=COLL)
     detail = rep.alert_detail()
-    # 数量 + 修法在前 512 字内,例子在后可截断。
+    # 数量 + 修法在前 512 字内(Pharos 截断点), 例子在后可截断。
     head = detail[:512]
     assert "20 个孤儿点" in head
     assert "修:" in head

@@ -248,7 +248,7 @@ def test_legacy_raw_compile_without_index_or_frontmatter(tmp_path: Path) -> None
 
 
 def test_repo_identity_uses_registry_name_not_basename(tmp_path: Path) -> None:
-    """回归防线: 物理目录名(leaf) != registry name 时,
+    """caveat-A 回归防线: 物理目录名(leaf) != registry name 时,
 
     identity / repo / canonical_repo / 落盘子目录全部用 registry name, 不取磁盘
     basename。生产名常 name==leaf, 物理数据测不出"读 leaf"的回归 → 必须用

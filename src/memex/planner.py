@@ -93,12 +93,12 @@ def code_token_count(query: str) -> int:
     return sum(1 for tok in _ascii_ident_runs(query) if _is_code_token(tok))
 
 
-# 选项 2 特性开关的检测器(eval-gated):强锚定 = 代码符号数量 ≥ 阈值。
-STRONG_ANCHOR_MIN_SYMBOLS = 2
+# 选项 2 特性开关的检测器(eval-gated):强锚定 = 代码符号 token ≥ 阈值。
+STRONG_ANCHOR_MIN_CODE_TOKENS = 2
 
 
 def is_strongly_anchored(
-    query: str, min_code_symbols: int = STRONG_ANCHOR_MIN_SYMBOLS
+    query: str, min_code_tokens: int = STRONG_ANCHOR_MIN_CODE_TOKENS
 ) -> bool:
     """强锚定/导航 query:代码符号 token 密集(object_id/uuid_v5/CHUNKED_EMBEDDING…)。"""
-    return code_token_count(query) >= min_code_symbols
+    return code_token_count(query) >= min_code_tokens

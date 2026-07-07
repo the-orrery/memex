@@ -390,7 +390,7 @@ def doctor_cmd(
 ) -> None:
     """对账中央 collection 点 ↔ 盘上 compiled: 孤儿(compiled_doc_missing)→ exit≠0。
 
-    外部周期检查入口: exit 0 全绿; 非 0 = 有孤儿点或读失败,
+    Pharos CommandCheck 入口(周期 backstop): exit 0 全绿; 非 0 = 有孤儿点或读失败,
     stderr 带诊断摘要(数量+修法+例子)。孤儿 = 向量在、compiled 文件缺 → recall
     semantic 降级 lexical。诊断直接跑本命令看全量明细; 修见 stderr 提示。
     """
@@ -404,7 +404,7 @@ def doctor_cmd(
     typer.echo(report.render())  # 全量明细进 stdout
     if report.healthy:
         return
-    typer.echo(report.alert_detail(), err=True)  # 摘要进 stderr
+    typer.echo(report.alert_detail(), err=True)  # 摘要进 stderr(Pharos 抓为 detail)
     raise typer.Exit(code=EXIT_FAILURE)
 
 

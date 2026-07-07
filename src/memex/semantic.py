@@ -34,7 +34,6 @@ CENTRAL_POINT_KIND = "note"
 # 语义 fetch 深度:多取再按 object_key 去重(防 chunk 点挤掉 unique 对象),返回 top-k unique。
 _DEDUP_DEPTH_FACTOR = 5
 _DEDUP_DEPTH_MIN = 50
-_AUTH_SCHEME = "Bear" + "er"
 
 
 @dataclass(frozen=True)
@@ -51,15 +50,15 @@ class SemanticHit:
 
 
 class SemanticUnavailable(Exception):
-    """semantic lane 基础设施不可用(embedding endpoint / qdrant 网络或响应异常)。
+    """semantic lane 基础设施不可用(embedding gateway / qdrant 网络或响应异常)。
 
     recall 层据此降级 lexical + 健康行标注;eval/显式 semantic lane 不捕, 照旧 loud。
     """
 
 
-def _ssl_context(_url: str) -> ssl.SSLContext | None:
-    """Build SSLContext from MEMEX_CA_BUNDLE env var if set."""
-    ca = os.environ.get("MEMEX_CA_BUNDLE")
+def _internal_ssl_context(_url: str) -> ssl.SSLContext | None:
+    """Build SSLContext from KB_SEARCH_CA_BUNDLE env var if set."""
+    ca = os.environ.get("KB_SEARCH_CA_BUNDLE")
     if not ca:
         return None
     p = Path(ca).expanduser()
@@ -73,11 +72,11 @@ def _ssl_context(_url: str) -> ssl.SSLContext | None:
 def _post_json(url: str, body: dict[str, Any], timeout: float) -> dict[str, Any]:
     data = json.dumps(body).encode("utf-8")
     headers: dict[str, str] = {"Content-Type": "application/json"}
-    bearer = os.environ.get("MEMEX_BEARER")
-    if bearer:
-        headers["Authorization"] = f"{_AUTH_SCHEME} {bearer}"
+    token = os.environ.get("KB_SEARCH_BEARER_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
     req = urllib.request.Request(url, data=data, headers=headers, method="POST")
-    ctx = _ssl_context(url)
+    ctx = _internal_ssl_context(url)
     with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
         return json.loads(resp.read())
 

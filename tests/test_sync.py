@@ -538,7 +538,7 @@ def test_embed_batch_failure_falls_back_to_single_docs(
     def _batch_fails(texts: list[str], s: Any = None) -> list[list[float]]:
         calls.append(len(texts))
         if len(texts) > 1:
-            raise OSError("embedding timeout")
+            raise OSError("gateway timeout")
         return _fake_embed(texts, s)
 
     monkeypatch.setattr("memex.indexing.sync.embed_texts", _batch_fails)
@@ -616,7 +616,7 @@ def test_kind_explicit_rollout_payload_update_not_embed(
     assert new_pt["vector"] == old_vec  # 零 re-embed
 
 
-# ---- prune_retired_qdrant_points --------------------------------------------
+# ---- prune_retired_qdrant_points -------------------------
 
 
 def _seed_idy(fake: FakeQdrant, coll: str, specs: list[tuple[str, str]]) -> None:
@@ -631,17 +631,17 @@ def test_retire_qdrant_deletes_inactive_repo_points() -> None:
         fake,
         "testcoll",
         [
-            ("1", "alpha-kb:d:a"),
-            ("2", "alpha-kb:d:b"),
-            ("3", "alpha:d:a"),  # 退役: 旧 leaf
-            ("4", "gamma:d:x"),  # 退役: 旧 leaf
-            ("5", "beta:d:y"),
+            ("1", "project-kb:d:a"),
+            ("2", "project-kb:d:b"),
+            ("3", "project-a:d:a"),  # 退役: 旧 leaf
+            ("4", "tracker:d:x"),  # 退役: 旧 leaf
+            ("5", "rhizome:d:y"),
         ],
     )
     r = prune_retired_qdrant_points(
-        fake, "testcoll", {"alpha-kb", "beta", "gamma-kb"}, apply=True
+        fake, "testcoll", {"project-kb", "rhizome", "tracker-kb"}, apply=True
     )
-    assert r.retired_repos == ["alpha", "gamma"]
+    assert r.retired_repos == ["project-a", "tracker"]
     assert r.point_count == 2
     assert r.deleted
     assert set(fake.collections["testcoll"]["points"]) == {"1", "2", "5"}
@@ -649,8 +649,8 @@ def test_retire_qdrant_deletes_inactive_repo_points() -> None:
 
 def test_retire_qdrant_dry_run_no_delete() -> None:
     fake = FakeQdrant()
-    _seed_idy(fake, "testcoll", [("1", "alpha-kb:d:a"), ("2", "alpha:d:a")])
-    r = prune_retired_qdrant_points(fake, "testcoll", {"alpha-kb"}, apply=False)
+    _seed_idy(fake, "testcoll", [("1", "project-kb:d:a"), ("2", "project-a:d:a")])
+    r = prune_retired_qdrant_points(fake, "testcoll", {"project-kb"}, apply=False)
     assert r.point_count == 1
     assert not r.deleted
     assert set(fake.collections["testcoll"]["points"]) == {"1", "2"}
@@ -665,15 +665,15 @@ def test_retire_qdrant_mass_guard_refuses_then_force() -> None:
             ("1", "old:d:a"),
             ("2", "old:d:b"),
             ("3", "old:d:c"),
-            ("4", "alpha-kb:d:x"),
+            ("4", "project-kb:d:x"),
         ],
     )  # 3 退役 / 4 总 = 75% > 50%
-    r = prune_retired_qdrant_points(fake, "testcoll", {"alpha-kb"}, apply=True)
+    r = prune_retired_qdrant_points(fake, "testcoll", {"project-kb"}, apply=True)
     assert r.refused is not None
     assert not r.deleted
     assert set(fake.collections["testcoll"]["points"]) == {"1", "2", "3", "4"}
     r2 = prune_retired_qdrant_points(
-        fake, "testcoll", {"alpha-kb"}, apply=True, force=True
+        fake, "testcoll", {"project-kb"}, apply=True, force=True
     )
     assert r2.deleted
     assert r2.point_count == 3
@@ -682,7 +682,7 @@ def test_retire_qdrant_mass_guard_refuses_then_force() -> None:
 
 def test_retire_qdrant_missing_collection_noop() -> None:
     fake = FakeQdrant()
-    r = prune_retired_qdrant_points(fake, "nope", {"alpha-kb"}, apply=True)
+    r = prune_retired_qdrant_points(fake, "nope", {"project-kb"}, apply=True)
     assert r.point_count == 0
     assert not r.deleted
     assert not r.retired_repos

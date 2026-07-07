@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import gnomon as ot
-from gnomon.telemetry import (  # re-export for tests + package callers
+from gnomon.telemetry import (  # re-export for tests + internal callers
     Tee as Tee,
 )
 from gnomon.telemetry import (

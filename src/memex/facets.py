@@ -39,7 +39,7 @@ class Facets:
         """中央 collection 的 server-side 条件(domain_prefixes/kind 有 payload index)。
 
         domain 前缀语义靠写路径的累进数组(`a/b` → ["a","a/b"]):对数组做精确
-        match 即「按前缀收窄」,且 `foo` 不误伤 `foo-extra`。
+        match 即「按前缀收窄」,且 `foo` 不误伤 `foo-private`。
         """
         out: list[dict[str, Any]] = []
         if self.domain:
