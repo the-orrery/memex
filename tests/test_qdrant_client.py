@@ -20,7 +20,7 @@ class _Resp:
         return b'{"result": true}'
 
 
-def test_qdrant_request_uses_bearer_and_ssl_context(
+def test_qdrant_request_uses_gateway_token_and_ssl_context(
     monkeypatch: Any,
 ) -> None:
     captured: dict[str, Any] = {}
@@ -35,9 +35,9 @@ def test_qdrant_request_uses_bearer_and_ssl_context(
         captured["context"] = context
         return _Resp()
 
-    monkeypatch.setenv("MEMEX_BEARER", "test-value")
+    monkeypatch.setenv("KB_SEARCH_BEARER_TOKEN", "test-token")
     monkeypatch.setattr(
-        "memex.indexing.qdrant._ssl_context",
+        "memex.indexing.qdrant._internal_ssl_context",
         lambda _url: sentinel_context,
     )
     monkeypatch.setattr(qdrant, "_open_no_proxy", fake_open_no_proxy)
@@ -48,7 +48,7 @@ def test_qdrant_request_uses_bearer_and_ssl_context(
 
     assert client.collection_exists("kb_central") is True
     assert captured["url"] == "https://example.test/qdrant/collections/kb_central"
-    assert captured["headers"]["Authorization"] == qdrant._AUTH_SCHEME + " test-value"
+    assert captured["headers"]["Authorization"] == "Bearer test-token"
     assert captured["context"] is sentinel_context
     assert captured["timeout"] == 2.5
 
@@ -80,7 +80,9 @@ def test_qdrant_request_retries_transient_tls_verification(
     assert len(calls) == 2
 
 
-def test_ssl_context_uses_ca_bundle_for_https(monkeypatch: Any, tmp_path: Any) -> None:
+def test_internal_ssl_context_uses_ca_bundle_for_https(
+    monkeypatch: Any, tmp_path: Any
+) -> None:
     ca = tmp_path / "ca.pem"
     ca.write_text("test ca")
     sentinel_context = type("Ctx", (), {"verify_flags": 0})()
@@ -90,16 +92,18 @@ def test_ssl_context_uses_ca_bundle_for_https(monkeypatch: Any, tmp_path: Any) -
         captured["cafile"] = cafile
         return sentinel_context
 
-    monkeypatch.setenv("MEMEX_CA_BUNDLE", str(ca))
+    monkeypatch.setenv("KB_SEARCH_CA_BUNDLE", str(ca))
     monkeypatch.setattr(qdrant.ssl, "create_default_context", fake_default_context)
 
-    assert qdrant._ssl_context("https://example.test/qdrant") is sentinel_context
+    assert (
+        qdrant._internal_ssl_context("https://example.test/qdrant") is sentinel_context
+    )
     assert captured["cafile"] == str(ca)
 
 
-def test_ssl_context_skips_plain_http(monkeypatch: Any, tmp_path: Any) -> None:
+def test_internal_ssl_context_skips_plain_http(monkeypatch: Any, tmp_path: Any) -> None:
     ca = tmp_path / "ca.pem"
     ca.write_text("test ca")
-    monkeypatch.setenv("MEMEX_CA_BUNDLE", str(ca))
+    monkeypatch.setenv("KB_SEARCH_CA_BUNDLE", str(ca))
 
-    assert qdrant._ssl_context("http://127.0.0.1:6333") is None
+    assert qdrant._internal_ssl_context("http://127.0.0.1:6333") is None

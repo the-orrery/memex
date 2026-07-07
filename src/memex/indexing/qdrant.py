@@ -21,7 +21,6 @@ from memex.config import Settings, settings
 
 _HTTP_NOT_FOUND = 404
 _TLS_RETRY_ATTEMPTS = 5
-_AUTH_SCHEME = "Bear" + "er"
 
 
 class QdrantError(Exception):
@@ -32,10 +31,10 @@ class QdrantError(Exception):
         self.code = code
 
 
-def _ssl_context(url: str) -> ssl.SSLContext | None:
+def _internal_ssl_context(url: str) -> ssl.SSLContext | None:
     if urlparse(url).scheme != "https":
         return None
-    ca = os.environ.get("MEMEX_CA_BUNDLE")
+    ca = os.environ.get("KB_SEARCH_CA_BUNDLE")
     if not ca:
         return None
     p = Path(ca).expanduser()
@@ -78,11 +77,11 @@ class Qdrant:
         url = f"{self.base}{path}"
         data = json.dumps(body).encode("utf-8") if body is not None else None
         headers: dict[str, str] = {"Content-Type": "application/json"}
-        bearer = os.environ.get("MEMEX_BEARER")
-        if bearer:
-            headers["Authorization"] = f"{_AUTH_SCHEME} {bearer}"
+        token = os.environ.get("KB_SEARCH_BEARER_TOKEN")
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
         req = urllib.request.Request(url, data=data, headers=headers, method=method)
-        ctx = _ssl_context(url)
+        ctx = _internal_ssl_context(url)
         for attempt in range(_TLS_RETRY_ATTEMPTS):
             try:
                 with _open_no_proxy(req, timeout=self.timeout, context=ctx) as resp:

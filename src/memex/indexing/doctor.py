@@ -3,7 +3,7 @@
 向量在、compiled 文件不在盘 = compiled_doc_missing 孤儿点 → recall 读路径把
 该 hit gate 出 semantic 池、降级 lexical(见 health.stale_drop_reason)。读侧只在
 查询时被动发现, 写侧此前零巡检。本 doctor 是写侧 backstop: 扫一遍中央 collection,
-有孤儿 exit≠0, 由外部周期检查抓出来 → session-start 露出 → agent
+有孤儿 exit≠0, 由 Pharos CommandCheck cadence 抓出来 → session-start 露出 → agent
 排查修(源在则 sync --apply 重建 / 源已删则 prune 点 / frontmatter 被剥则补回)。
 
 纯只读: 不动 qdrant、不动盘。孤儿如何产生(prune 路径分叉 / 仓脱离 sync 覆盖)是另一
@@ -74,7 +74,7 @@ class ConsistencyReport:
         return "\n".join(lines)
 
     def alert_detail(self, examples: int = 5) -> str:
-        """外部周期检查抓 stderr[:512] 当 detail: 数量+修法前置(防截断),
+        """Pharos CommandCheck 抓 stderr[:512] 当 detail: 数量+修法前置(防截断),
         孤儿例子在后(可被截断不影响处置)。"""
         if self.healthy:
             return self.summary()

@@ -252,7 +252,7 @@ def _scroll_repo_points(client: Qdrant, coll: str, repo: str) -> list[dict[str, 
 def _find_reusable_vector(
     client: Qdrant, coll: str, text_hash: str
 ) -> list[float] | None:
-    """两级 reuse ②: 按 (text_hash, embedding_profile) 找现存向量。"""
+    """两级 reuse ②: 按 (text_hash, embedding_profile) 找现存向量(C6)。"""
     points, _ = client.scroll(
         coll,
         flt={
@@ -494,7 +494,7 @@ def prune_retired_qdrant_points(
     """清 central collection 里 identity repo 段 ∉ active sources 的退役点。
 
     pipeline.prune_retired_repos 的 qdrant 对偶: 改名后旧 identity(如
-    old-name:→new-name:)的点, 单仓 sync 的 per-repo prune 只按本仓 identity 前缀
+    project-a:→project-kb:)的点, 单仓 sync 的 per-repo prune 只按本仓 identity 前缀
     收窄 scope, 扫不到已退役 repo name 的点 → 永久残留成孤儿(doctor 报
     compiled_doc_missing)。本函数全量扫 collection, 按 identity 的 repo 段
     (split ':'[0])判退役整批删。守卫同 prune_retired_repos: 待删 >50% 总点拒绝

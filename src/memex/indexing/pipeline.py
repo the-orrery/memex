@@ -33,7 +33,7 @@ from memex.indexing.scan import (
 class CompileOutput:
     """一个 repo 的编译产出: 报告 + 成功编译的 docs(dry-run 时不落盘)。
 
-    canonical_repo = repo identity(identity 前缀 + 落盘子目录名)。
+    canonical_repo = repo identity(identity 前缀 + 落盘子目录名)。起
     = registry 逻辑 name(kb-sources.toml), 与物理目录名/位置解耦。
     """
 

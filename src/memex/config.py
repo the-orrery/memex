@@ -27,7 +27,8 @@ class Settings(BaseSettings):
     # collection。此处只留开关供切换。
     read_from_central: bool = True
 
-    # 语义 lane 外部服务配置(env 可覆盖)。默认值面向本机开发。
+    # 语义 lane 外部服务配置(env 可覆盖)。默认值面向本机开发;
+    # 生产部署通过 KB_SEARCH_* env vars 指到实际网关。
     qdrant_url: str = "http://127.0.0.1:6333"
     embedding_url: str = "http://127.0.0.1:3002/v1/embeddings"
     embedding_model: str = "qwen3-embedding-8b"
