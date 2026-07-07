@@ -224,7 +224,6 @@ def recall_export(
     from memex.recall import recall as do_recall
     from memex.semantic import SemanticUnavailable
 
-
     facets = Facets(domain=domain, kind=kind, tag=tag)
     try:
         res = do_recall(
