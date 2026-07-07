@@ -5,8 +5,8 @@ import sys
 from typing import Any
 
 import typer
-
 from orrery_heartbeat import check_update
+
 from memex import telemetry
 from memex.logging_setup import setup_logging
 
@@ -223,7 +223,6 @@ def recall_export(
     from memex.recall import _doc_lookup
     from memex.recall import recall as do_recall
     from memex.semantic import SemanticUnavailable
-
 
     facets = Facets(domain=domain, kind=kind, tag=tag)
     try:
