@@ -15,6 +15,7 @@ from memex.indexing.qdrant import Qdrant, QdrantError
 from memex.indexing.sync import (
     EMBEDDING_PROFILE_ID,
     INDEX_PROFILE,
+    PAYLOAD_INDEX_FIELDS,
     POINT_KIND,
     UNIT_MODE_WHOLE,
     SyncMode,
@@ -115,7 +116,8 @@ class FakeQdrant(Qdrant):
         self, name: str, field: str, schema: str = "keyword"
     ) -> None:
         self.write_ops.append(f"create_index:{field}")
-        self.collections[name]["indexes"].append(field)
+        if field not in self.collections[name]["indexes"]:
+            self.collections[name]["indexes"].append(field)
 
     def delete_collection(self, name: str) -> None:
         self.write_ops.append(f"delete_collection:{name}")
@@ -218,10 +220,50 @@ def test_apply_fresh_creates_collection_and_embeds(
     assert not rep.failures
     assert len(rep.embedded) == 2
     coll = fake.collections["testcoll"]
-    assert sorted(coll["indexes"]) == ["domain_prefixes", "kind", "point_kind"]
+    assert sorted(coll["indexes"]) == sorted(PAYLOAD_INDEX_FIELDS)
     assert len(coll["points"]) == 2
     pt = next(iter(coll["points"].values()))
     assert pt["payload"]["unit_mode"] == UNIT_MODE_WHOLE
+
+
+def test_apply_existing_collection_ensures_payload_indexes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("memex.indexing.sync.embed_texts", _fake_embed)
+    _index(tmp_path / "d" / "INDEX.md")
+    fake = FakeQdrant()
+    fake.collections["testcoll"] = {"points": {}, "indexes": ["point_kind"], "dim": DIM}
+    _, rep = sync_repo(
+        "repo", tmp_path, client=fake, s=_settings(), mode=SyncMode(apply=True)
+    )
+    assert not rep.failures
+    assert sorted(fake.collections["testcoll"]["indexes"]) == sorted(
+        PAYLOAD_INDEX_FIELDS
+    )
+    assert "create_collection:testcoll" not in fake.write_ops
+
+
+def test_progress_reports_long_phases_and_embed_timeout_hint(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("memex.indexing.sync.embed_texts", _fake_embed)
+    _index(tmp_path / "d" / "INDEX.md")
+    _note(tmp_path / "d" / "a.md")
+    progress: list[str] = []
+    _, rep = sync_repo(
+        "repo",
+        tmp_path,
+        client=FakeQdrant(),
+        s=_settings(embed_timeout_secs=12),
+        mode=SyncMode(apply=True),
+        progress=progress.append,
+    )
+    assert not rep.failures
+    assert any("compile start" in line for line in progress)
+    assert any("planning doc actions" in line for line in progress)
+    assert any("embedding batch 1/1" in line for line in progress)
+    assert any("timeout=12s" in line for line in progress)
+    assert any("KB_SEARCH_EMBED_TIMEOUT_SECS" in line for line in progress)
 
 
 def test_rerun_unchanged_skips(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

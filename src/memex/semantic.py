@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import os
 import ssl
+import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
@@ -77,12 +78,33 @@ def _post_json(url: str, body: dict[str, Any], timeout: float) -> dict[str, Any]
         headers["Authorization"] = f"Bearer {token}"
     req = urllib.request.Request(url, data=data, headers=headers, method="POST")
     ctx = _internal_ssl_context(url)
-    with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
-        return json.loads(resp.read())
+    try:
+        with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
+            return json.loads(resp.read())
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", "replace").strip()[:500]
+        reason = getattr(exc, "reason", None) or exc.msg
+        msg = f"HTTP {exc.code} {reason}"
+        if detail:
+            msg = f"{msg}: {detail}"
+        raise OSError(msg) from exc
 
 
 # URLError/TimeoutError ⊂ OSError;JSONDecodeError ⊂ ValueError;KeyError = 畸形响应。
 _UNAVAILABLE_ERRORS = (OSError, ValueError, KeyError)
+
+
+def _embedding_unavailable_message(
+    exc: BaseException, s: Settings, batch_size: int
+) -> str:
+    timeout = f"{s.embed_timeout_secs:g}s"
+    return (
+        "embedding unreachable: request failed "
+        f"(endpoint={s.embedding_url}, model={s.embedding_model}, "
+        f"batch={batch_size}, timeout={timeout}; "
+        "set KB_SEARCH_EMBED_TIMEOUT_SECS to lower while diagnosing): "
+        f"{exc}"
+    )
 
 
 def embed_texts(texts: list[str], s: Settings = settings) -> list[list[float]]:
@@ -106,7 +128,9 @@ def embed_texts(texts: list[str], s: Settings = settings) -> list[list[float]]:
             if len(v) != s.embedding_dimensions:
                 raise ValueError(f"embedding 维度 {len(v)} != {s.embedding_dimensions}")
     except _UNAVAILABLE_ERRORS as exc:
-        raise SemanticUnavailable(f"embedding unreachable: {exc}") from exc
+        raise SemanticUnavailable(
+            _embedding_unavailable_message(exc, s, len(texts))
+        ) from exc
     return vectors
 
 

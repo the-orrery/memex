@@ -113,6 +113,11 @@ def _echo_integrity(integ: IntegrityReport) -> None:
         typer.echo(section)
 
 
+def _echo_sync_progress(message: str) -> None:
+    """sync_repo 长阶段进度:必须在最终 report 前可见,避免 apply 看起来假死。"""
+    typer.echo(f"  {message}")
+
+
 @app.command(name="compile")
 def compile_cmd(
     repo: list[str] = typer.Option(
@@ -227,6 +232,7 @@ def sync_cmd(
             path,
             mode=SyncMode(apply=apply, force=force),
             legacy=name in legacy_names,
+            progress=_echo_sync_progress,
         )
         typer.echo(c_out.report.render())
         integ.add_repo(c_out.report)
@@ -295,6 +301,7 @@ def sync_all_cmd(  # noqa: C901, PLR0912, PLR0915 — typer 命令: 选项解析
                 path,
                 mode=SyncMode(apply=apply, force=force),
                 legacy=name in reg.legacy,
+                progress=_echo_sync_progress,
             )
         except Exception as exc:  # 单仓意外崩溃不中断全批(D4)
             summaries.append(f"{name}: CRASH — {exc}")
