@@ -60,11 +60,11 @@ def _settings(**overrides: Any) -> Settings:
     return Settings(**base)
 
 
-def _fake_embed(texts: list[str], s: Any = None) -> list[list[float]]:
+def _fake_embed(texts: list[str], s: Any = None, **_kwargs: Any) -> list[list[float]]:
     return [[float(len(t) % 7) + 0.5] * DIM for t in texts]
 
 
-def _boom_embed(texts: list[str], s: Any = None) -> list[list[float]]:
+def _boom_embed(texts: list[str], s: Any = None, **_kwargs: Any) -> list[list[float]]:
     raise AssertionError("embed 不应被调用")
 
 
@@ -557,7 +557,9 @@ def test_single_doc_failure_continues(
 def test_embed_failure_recorded_continues(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    def _fail_embed(texts: list[str], s: Any = None) -> list[list[float]]:
+    def _fail_embed(
+        texts: list[str], s: Any = None, **_kwargs: Any
+    ) -> list[list[float]]:
         raise OSError("embedding 服务挂了")
 
     monkeypatch.setattr("memex.indexing.sync.embed_texts", _fail_embed)
@@ -577,7 +579,9 @@ def test_embed_batch_failure_falls_back_to_single_docs(
 ) -> None:
     calls: list[int] = []
 
-    def _batch_fails(texts: list[str], s: Any = None) -> list[list[float]]:
+    def _batch_fails(
+        texts: list[str], s: Any = None, **_kwargs: Any
+    ) -> list[list[float]]:
         calls.append(len(texts))
         if len(texts) > 1:
             raise OSError("gateway timeout")
@@ -596,6 +600,38 @@ def test_embed_batch_failure_falls_back_to_single_docs(
     assert len(rep.embedded) == 3
     assert len(fake.collections["testcoll"]["points"]) == 3
     assert any("逐篇重试" in n for n in rep.notes)
+
+
+def test_sync_uses_sync_embedding_lane(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[dict[str, Any]] = []
+
+    def _capture_embed(
+        texts: list[str], s: Any = None, **kwargs: Any
+    ) -> list[list[float]]:
+        calls.append(kwargs)
+        return _fake_embed(texts, s)
+
+    monkeypatch.setattr("memex.indexing.sync.embed_texts", _capture_embed)
+    _index(tmp_path / "d" / "INDEX.md")
+    _note(tmp_path / "d" / "a.md")
+    fake = FakeQdrant()
+    _, rep = sync_repo(
+        "repo",
+        tmp_path,
+        client=fake,
+        s=_settings(
+            embedding_url="https://gateway.test/embedding-query/v1/embeddings"
+        ),
+        mode=SyncMode(apply=True),
+    )
+
+    assert not rep.failures
+    assert {call["lane"] for call in calls} == {"sync"}
+    assert {call["endpoint"] for call in calls} == {
+        "https://gateway.test/embedding-sync/v1/embeddings"
+    }
 
 
 class DownQdrant(FakeQdrant):

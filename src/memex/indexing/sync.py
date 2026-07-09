@@ -461,6 +461,7 @@ def sync_repo(  # noqa: C901, PLR0911, PLR0912, PLR0913, PLR0915 — compile→d
                 report.rekeyed.remove(ident)
                 report.failures.append((ident, f"re-key upsert: {exc}"))
 
+    sync_embedding_url = s.effective_sync_embedding_url
     embed_batches = list(batched(plan.embed, max(1, s.embed_batch_size)))
     if plan.embed:
         emit(
@@ -474,14 +475,24 @@ def sync_repo(  # noqa: C901, PLR0911, PLR0912, PLR0913, PLR0915 — compile→d
             emit(
                 f"embedding batch {batch_idx}/{len(embed_batches)}: {len(batch)} doc(s)"
             )
-            vectors = embed_texts([doc_embed_text(doc) for doc, _, _ in batch], s)
+            vectors = embed_texts(
+                [doc_embed_text(doc) for doc, _, _ in batch],
+                s,
+                endpoint=sync_embedding_url,
+                lane="sync",
+            )
         except Exception as exc:  # embed 网络/服务错: 整批记失败, 继续下一批
             if len(batch) > 1:
                 report.notes.append(f"embed batch {len(batch)} 失败, 已逐篇重试: {exc}")
                 for doc, pid, payload in batch:
                     try:
                         emit(f"embedding single retry: {doc.identity}")
-                        vec = embed_texts([doc_embed_text(doc)], s)[0]
+                        vec = embed_texts(
+                            [doc_embed_text(doc)],
+                            s,
+                            endpoint=sync_embedding_url,
+                            lane="sync",
+                        )[0]
                     except Exception as single_exc:
                         report.embedded.remove(doc.identity)
                         report.failures.append((doc.identity, f"embed: {single_exc}"))

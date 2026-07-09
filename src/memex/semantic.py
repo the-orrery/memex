@@ -95,28 +95,40 @@ _UNAVAILABLE_ERRORS = (OSError, ValueError, KeyError)
 
 
 def _embedding_unavailable_message(
-    exc: BaseException, s: Settings, batch_size: int
+    exc: BaseException,
+    s: Settings,
+    batch_size: int,
+    *,
+    endpoint: str,
+    lane: str,
 ) -> str:
     timeout = f"{s.embed_timeout_secs:g}s"
     return (
         "embedding unreachable: request failed "
-        f"(endpoint={s.embedding_url}, model={s.embedding_model}, "
+        f"(lane={lane}, endpoint={endpoint}, model={s.embedding_model}, "
         f"batch={batch_size}, timeout={timeout}; "
         "set KB_SEARCH_EMBED_TIMEOUT_SECS to lower while diagnosing): "
         f"{exc}"
     )
 
 
-def embed_texts(texts: list[str], s: Settings = settings) -> list[list[float]]:
+def embed_texts(
+    texts: list[str],
+    s: Settings = settings,
+    *,
+    endpoint: str | None = None,
+    lane: str = "query",
+) -> list[list[float]]:
     """批量 embed(OpenAI 兼容 /v1/embeddings)。按 index 还原顺序,校验维度。
 
     基础设施异常(网络/畸形响应/维度不符)统一转 SemanticUnavailable。
     """
     if not texts:
         return []
+    url = endpoint or s.embedding_url
     try:
         resp = _post_json(
-            s.embedding_url,
+            url,
             {"model": s.embedding_model, "input": texts},
             s.embed_timeout_secs,
         )
@@ -129,7 +141,9 @@ def embed_texts(texts: list[str], s: Settings = settings) -> list[list[float]]:
                 raise ValueError(f"embedding 维度 {len(v)} != {s.embedding_dimensions}")
     except _UNAVAILABLE_ERRORS as exc:
         raise SemanticUnavailable(
-            _embedding_unavailable_message(exc, s, len(texts))
+            _embedding_unavailable_message(
+                exc, s, len(texts), endpoint=url, lane=lane
+            )
         ) from exc
     return vectors
 

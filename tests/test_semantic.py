@@ -61,6 +61,7 @@ def test_embed_http_504_includes_timeout_and_env_hint(monkeypatch) -> None:
     assert "embedding unreachable" in msg
     assert "HTTP 504 Gateway Timeout" in msg
     assert "upstream timed out" in msg
+    assert "lane=query" in msg
     assert "endpoint=https://embed.test/v1/embeddings" in msg
     assert "model=test-model" in msg
     assert "batch=1" in msg
