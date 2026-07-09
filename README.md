@@ -42,7 +42,9 @@ semantic lane 依赖一个 OpenAI-compatible embedding endpoint 和一个 qdrant
 实例。常用配置:
 
 - `KB_SEARCH_QDRANT_URL`:qdrant URL,默认 `http://127.0.0.1:6333`。
-- `KB_SEARCH_EMBEDDING_URL`:embedding endpoint,默认 `http://127.0.0.1:3002/v1/embeddings`。
+- `KB_SEARCH_EMBEDDING_URL`:query embedding endpoint,默认 `http://127.0.0.1:3002/v1/embeddings`。
+- `KB_SEARCH_SYNC_EMBEDDING_URL`:sync/write-path embedding endpoint;未配置时从
+  `/embedding-query/` 自动派生 `/embedding-sync/`,否则复用 `KB_SEARCH_EMBEDDING_URL`。
 - `KB_SEARCH_EMBEDDING_MODEL`:embedding model name。
 - `KB_SEARCH_EMBEDDING_DIMENSIONS`:embedding vector dimension。
 - `MEMEX_BEARER`:可选 bearer credential。
