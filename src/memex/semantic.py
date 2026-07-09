@@ -141,9 +141,7 @@ def embed_texts(
                 raise ValueError(f"embedding 维度 {len(v)} != {s.embedding_dimensions}")
     except _UNAVAILABLE_ERRORS as exc:
         raise SemanticUnavailable(
-            _embedding_unavailable_message(
-                exc, s, len(texts), endpoint=url, lane=lane
-            )
+            _embedding_unavailable_message(exc, s, len(texts), endpoint=url, lane=lane)
         ) from exc
     return vectors
 

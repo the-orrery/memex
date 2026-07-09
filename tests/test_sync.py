@@ -621,9 +621,7 @@ def test_sync_uses_sync_embedding_lane(
         "repo",
         tmp_path,
         client=fake,
-        s=_settings(
-            embedding_url="https://gateway.test/embedding-query/v1/embeddings"
-        ),
+        s=_settings(embedding_url="https://gateway.test/embedding-query/v1/embeddings"),
         mode=SyncMode(apply=True),
     )
 
