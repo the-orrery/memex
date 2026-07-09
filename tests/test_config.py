@@ -17,6 +17,14 @@ def test_sync_embedding_url_derives_from_query_lane() -> None:
     )
 
 
+def test_sync_embedding_url_falls_back_to_embedding_url() -> None:
+    s = Settings(
+        embedding_url="http://127.0.0.1:3002/v1/embeddings",
+    )
+
+    assert s.effective_sync_embedding_url == "http://127.0.0.1:3002/v1/embeddings"
+
+
 def test_sync_embedding_url_override_wins() -> None:
     s = Settings(
         embedding_url="https://gateway.test/embedding-query/v1/embeddings",
