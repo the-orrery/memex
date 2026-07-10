@@ -25,7 +25,7 @@ build_binary() {
   local entry="$2"
   uv run --group freeze pyinstaller \
     --noconfirm \
-    --onefile \
+    --onedir \
     --clean \
     --paths "${ROOT}/src" \
     --collect-all jieba \
@@ -37,9 +37,8 @@ build_binary() {
     --workpath "${BUILD_DIR}/work/${name}" \
     --specpath "${BUILD_DIR}/spec" \
     "${ROOT}/${entry}"
-  install -m 0755 \
-    "${BUILD_DIR}/dist/${name}" \
-    "${OUTPUT_DIR}/${name}-${platform}-${arch}"
+  tar -C "${BUILD_DIR}/dist" \
+    -czf "${OUTPUT_DIR}/${name}-${platform}-${arch}.tar.gz" "${name}"
 }
 
 build_binary "memex" "scripts/memex_entry.py"
@@ -48,9 +47,9 @@ build_binary "memex-sync" "scripts/memex_sync_entry.py"
 if [[ "${SKIP_SMOKE:-0}" != "1" ]]; then
   smoke_root="$(mktemp -d)"
   CI=1 XDG_DATA_HOME="${smoke_root}/data" XDG_CACHE_HOME="${smoke_root}/cache" \
-    "${OUTPUT_DIR}/memex-${platform}-${arch}" --help >/dev/null
+    "${BUILD_DIR}/dist/memex/memex" --help >/dev/null
   CI=1 XDG_DATA_HOME="${smoke_root}/data" XDG_CACHE_HOME="${smoke_root}/cache" \
-    "${OUTPUT_DIR}/memex-sync-${platform}-${arch}" --help >/dev/null
+    "${BUILD_DIR}/dist/memex-sync/memex-sync" --help >/dev/null
   rm -rf "${smoke_root}"
 fi
 printf 'built %s binaries in %s\n' "${platform}-${arch}" "${OUTPUT_DIR}"
