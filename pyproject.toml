@@ -6,7 +6,7 @@ build-backend = "uv_build"
 
 [project]
 name = "memex"
-version = "0.1.5"
+version = "0.1.6"
 description = "Local-first KB hybrid retrieval engine (lexical BM25 + semantic qdrant + hybrid RRF)."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -24,7 +24,6 @@ dependencies = [
     "bm25s>=0.3.9",
     "jieba>=0.42.1",
     "numpy>=2.4.6",
-    "orrery-heartbeat @ git+https://github.com/the-orrery/orrery-heartbeat.git@2eb9141389416e529aaa8ac7c7a744cae2efd3e8",
 ]
 
 [project.scripts]
