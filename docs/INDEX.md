@@ -1,6 +1,7 @@
 ---
 description: memex 的公开文档入口。
 keywords: [memex, docs, architecture, retrieval, indexing, hybrid]
+kind: index
 links: [overview, architecture]
 ---
 
