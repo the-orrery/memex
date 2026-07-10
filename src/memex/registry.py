@@ -90,6 +90,23 @@ def _load_local_overrides(registry: Path) -> dict[str, dict]:
     return overrides
 
 
+def _apply_local_overrides(
+    registry: Path, repos: dict[str, Path], legacy: set[str]
+) -> None:
+    """Apply machine-local paths and legacy flags to known logical sources."""
+    for name, override in _load_local_overrides(registry).items():
+        if name not in repos:
+            continue
+        if path := override.get("path"):
+            repos[name] = Path(path).expanduser()
+        if "legacy" not in override:
+            continue
+        if override["legacy"] is True:
+            legacy.add(name)
+        else:
+            legacy.discard(name)
+
+
 def load_source_registry() -> SourceRegistry:
     """读 kb-sources.toml(authoring 工具侧真相)→ SourceRegistry。
 
@@ -146,16 +163,7 @@ def load_source_registry() -> SourceRegistry:
             out[name] = Path(path).expanduser() if path else base / name
             if entry.get("legacy") is True:
                 legacy.add(name)
-        for name, override in _load_local_overrides(reg).items():
-            if name not in out:
-                continue
-            if override.get("path"):
-                out[name] = Path(override["path"]).expanduser()
-            if "legacy" in override:
-                if override["legacy"] is True:
-                    legacy.add(name)
-                else:
-                    legacy.discard(name)
+        _apply_local_overrides(reg, out, legacy)
         if not out:
             return _degraded(f"{reg}: no usable [[source]] entries")
         return SourceRegistry(
