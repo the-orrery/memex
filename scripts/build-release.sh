@@ -47,7 +47,11 @@ build_binary "memex" "scripts/memex_entry.py"
 build_binary "memex-sync" "scripts/memex_sync_entry.py"
 
 if [[ "${SKIP_SMOKE:-0}" != "1" ]]; then
-  "${OUTPUT_DIR}/memex-${platform}-${arch}" --help >/dev/null
-  "${OUTPUT_DIR}/memex-sync-${platform}-${arch}" --help >/dev/null
+  smoke_root="$(mktemp -d)"
+  CI=1 ORRERY_NO_UPDATE_CHECK=1 XDG_DATA_HOME="${smoke_root}/data" XDG_CACHE_HOME="${smoke_root}/cache" \
+    "${OUTPUT_DIR}/memex-${platform}-${arch}" --help >/dev/null
+  CI=1 ORRERY_NO_UPDATE_CHECK=1 XDG_DATA_HOME="${smoke_root}/data" XDG_CACHE_HOME="${smoke_root}/cache" \
+    "${OUTPUT_DIR}/memex-sync-${platform}-${arch}" --help >/dev/null
+  rm -rf "${smoke_root}"
 fi
 printf 'built %s binaries in %s\n' "${platform}-${arch}" "${OUTPUT_DIR}"

@@ -24,7 +24,7 @@ dependencies = [
     "bm25s>=0.3.9",
     "jieba>=0.42.1",
     "numpy>=2.4.6",
-    "orrery-heartbeat @ git+https://github.com/the-orrery/orrery-heartbeat.git",
+    "orrery-heartbeat @ git+https://github.com/the-orrery/orrery-heartbeat.git@d5e4f80a74c61772fc822b102a548184301d9e4d",
 ]
 
 [project.scripts]

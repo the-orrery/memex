@@ -62,7 +62,8 @@ semantic lane 依赖一个 OpenAI-compatible embedding endpoint 和一个 qdrant
 `memex-<os>-<arch>`、`memex-sync-<os>-<arch>` 和 `SHA256SUMS`；安装器必须先按
 checksum 校验，再写入 PATH。
 
-当前构建目标是 macOS arm64 与 Linux x86_64。直接安装 macOS arm64 版本：
+当前构建目标是 macOS arm64 与 Linux x86_64；Linux 产物以 Ubuntu 22.04 为
+兼容基线。直接安装 macOS arm64 版本：
 
 ```sh
 base=https://github.com/the-orrery/memex/releases/latest/download
@@ -84,8 +85,8 @@ uv run pytest
 ```
 
 运行 `./scripts/build-release.sh` 可在 `dist/release/` 生成当前 OS/arch 的两个
-二进制。推送与 `pyproject.toml` 版本一致的 `v*` tag 后，GitHub Actions 会构建、
-smoke test、生成 `SHA256SUMS` 并发布 release；版本不一致会直接失败。
+二进制。Pull request 会先在双平台构建和 smoke test；推送与 `pyproject.toml`
+版本一致的 `v*` tag 后才生成 `SHA256SUMS` 并发布不可变 release。
 
 常用命令:
 
