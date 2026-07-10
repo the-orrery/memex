@@ -1,3 +1,10 @@
+---
+description: memex 读写路径、模块边界和索引不变量。
+keywords: [memex, architecture, retrieval, indexing, sync]
+kind: reference
+links: [INDEX, overview]
+---
+
 # memex architecture
 
 memex 分成读路径和写路径。

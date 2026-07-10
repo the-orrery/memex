@@ -1,3 +1,10 @@
+---
+description: memex 的产品定位、检索能力和 local-first 运行方式。
+keywords: [memex, overview, lexical, semantic, hybrid]
+kind: reference
+links: [INDEX, architecture]
+---
+
 # memex overview
 
 memex 面向个人或小团队的 Markdown 知识库检索。它不要求把文档迁移到数据库:
