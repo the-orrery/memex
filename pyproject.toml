@@ -41,8 +41,8 @@ dev = [
     "poethepoet",
     "pyrefly>=1.1.1",
 ]
-# 出单文件 binary: uv run --group freeze poe freeze
-freeze = ["pyinstaller>=6.0"]
+# 出自包含 binary: ./scripts/build-release.sh
+freeze = ["pyinstaller>=6.0,<7"]
 
 [tool.poe.tasks]
 lint = "uvx ruff@0.15.16 check ."
@@ -50,7 +50,7 @@ fmt = "uvx ruff@0.15.16 format ."
 typecheck = "pyrefly check"
 test = "pytest"
 check = { sequence = ["lint", "typecheck", "test"], help = "lint + typecheck + test" }
-freeze = { cmd = "pyinstaller --onefile --clean --name memex src/memex/cli.py", help = "打单文件 binary 到 dist/" }
+freeze = { cmd = "./scripts/build-release.sh", help = "build self-contained memex and memex-sync release binaries" }
 
 [tool.ruff.lint]
 # TRY003: 禁止在 raise 处带消息是 opinionated 风格(逼每种错都建专用异常类),

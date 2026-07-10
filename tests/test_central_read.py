@@ -68,6 +68,7 @@ def test_load_source_repos_from_toml(
     )
     monkeypatch.setenv("KB_SOURCES", str(toml))
     monkeypatch.delenv("KB_SOURCE_ROOT", raising=False)
+    monkeypatch.delenv("KB_WORKSPACE_ROOT", raising=False)
     repos = load_source_repos()
     assert repos["alpha"] == Path("~/projects").expanduser() / "alpha"
     assert repos["beta"] == Path("~/elsewhere/beta").expanduser()
@@ -84,6 +85,53 @@ def test_load_source_repos_source_root_env_override(
     monkeypatch.setenv("KB_SOURCES", str(toml))
     monkeypatch.setenv("KB_SOURCE_ROOT", str(tmp_path / "override"))
     assert load_source_repos()["alpha"] == tmp_path / "override" / "alpha"
+
+
+def test_load_source_repos_shared_workspace_root_contract(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    toml = tmp_path / "sources.toml"
+    toml.write_text(
+        f'workspace_root = "{tmp_path / "from-registry"}"\n'
+        '[[source]]\nname = "alpha"\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("KB_SOURCES", str(toml))
+    monkeypatch.delenv("KB_SOURCE_ROOT", raising=False)
+    monkeypatch.delenv("KB_WORKSPACE_ROOT", raising=False)
+    assert load_source_repos()["alpha"] == tmp_path / "from-registry" / "alpha"
+
+    monkeypatch.setenv("KB_WORKSPACE_ROOT", str(tmp_path / "from-env"))
+    assert load_source_repos()["alpha"] == tmp_path / "from-env" / "alpha"
+
+
+def test_load_source_repos_applies_sibling_local_overlay(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    toml = tmp_path / "sources.toml"
+    toml.write_text(
+        f'workspace_root = "{tmp_path}"\n'
+        '[[source]]\nname = "alpha"\nlegacy = true\n'
+        '[[source]]\nname = "beta"\n',
+        encoding="utf-8",
+    )
+    (tmp_path / "sources.local.toml").write_text(
+        f'[[source]]\nname = "alpha"\npath = "{tmp_path / "local-alpha"}"\nlegacy = false\n'
+        f'[[source]]\nname = "unknown"\npath = "{tmp_path / "ignored"}"\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("KB_SOURCES", str(toml))
+    monkeypatch.delenv("KB_SOURCE_ROOT", raising=False)
+    monkeypatch.delenv("KB_WORKSPACE_ROOT", raising=False)
+
+    from memex.registry import load_source_registry
+
+    registry = load_source_registry()
+    assert registry.repos == {
+        "alpha": tmp_path / "local-alpha",
+        "beta": tmp_path / "beta",
+    }
+    assert registry.legacy == frozenset()
 
 
 def test_load_source_repos_fallback_on_missing(
@@ -148,6 +196,7 @@ def test_load_source_repos_skips_illegal_and_duplicate_names(
     )
     monkeypatch.setenv("KB_SOURCES", str(toml))
     monkeypatch.delenv("KB_SOURCE_ROOT", raising=False)
+    monkeypatch.delenv("KB_WORKSPACE_ROOT", raising=False)
     repos = load_source_repos()
     assert set(repos) == {"good"}
     assert (

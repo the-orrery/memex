@@ -221,7 +221,7 @@ dev = [
     { name = "pytest-mock" },
     { name = "pytest-randomly" },
 ]
-freeze = [{ name = "pyinstaller", specifier = ">=6.0" }]
+freeze = [{ name = "pyinstaller", specifier = ">=6.0,<7" }]
 
 [[package]]
 name = "numpy"

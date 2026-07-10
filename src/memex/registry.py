@@ -16,9 +16,15 @@ from pathlib import Path
 
 
 def _source_root() -> Path:
+    # KB_SOURCE_ROOT is memex's historical name; KB_WORKSPACE_ROOT is the
+    # shared rhizome registry contract. Keep both so one registry can feed the
+    # authoring and indexing binaries without duplicate path configuration.
     return Path(
         os.path.expandvars(
-            os.environ.get("KB_SOURCE_ROOT", str(Path.home() / "projects"))
+            os.environ.get(
+                "KB_SOURCE_ROOT",
+                os.environ.get("KB_WORKSPACE_ROOT", str(Path.home() / "projects")),
+            )
         )
     ).expanduser()
 
@@ -63,6 +69,27 @@ def _kb_sources_path() -> Path:
     return source_root / _KB_SOURCES_RELATIVE
 
 
+def _load_local_overrides(registry: Path) -> dict[str, dict]:
+    """Load the sibling ``*.local.toml`` machine-path overlay.
+
+    ``~/.config/rhizome/sources.toml`` therefore pairs with
+    ``sources.local.toml``. Overrides patch existing logical sources only;
+    source identity and membership remain owned by the base registry.
+    """
+    local = registry.with_name(registry.stem + ".local.toml")
+    if not local.is_file():
+        return {}
+    data = tomllib.loads(local.read_text(encoding="utf-8"))
+    overrides: dict[str, dict] = {}
+    for entry in data.get("source", []):
+        name = entry.get("name")
+        if name and isinstance(name, str):
+            overrides[name] = {
+                key: value for key, value in entry.items() if key != "name"
+            }
+    return overrides
+
+
 def load_source_registry() -> SourceRegistry:
     """读 kb-sources.toml(authoring 工具侧真相)→ SourceRegistry。
 
@@ -89,7 +116,13 @@ def load_source_registry() -> SourceRegistry:
     try:
         data = tomllib.loads(reg.read_text(encoding="utf-8"))
         base = Path(
-            os.environ.get("KB_SOURCE_ROOT", data.get("source_root", "~/projects"))
+            os.environ.get(
+                "KB_SOURCE_ROOT",
+                os.environ.get(
+                    "KB_WORKSPACE_ROOT",
+                    data.get("source_root", data.get("workspace_root", "~/projects")),
+                ),
+            )
         ).expanduser()
         out: dict[str, Path] = {}
         legacy: set[str] = set()
@@ -113,6 +146,16 @@ def load_source_registry() -> SourceRegistry:
             out[name] = Path(path).expanduser() if path else base / name
             if entry.get("legacy") is True:
                 legacy.add(name)
+        for name, override in _load_local_overrides(reg).items():
+            if name not in out:
+                continue
+            if override.get("path"):
+                out[name] = Path(override["path"]).expanduser()
+            if "legacy" in override:
+                if override["legacy"] is True:
+                    legacy.add(name)
+                else:
+                    legacy.discard(name)
         if not out:
             return _degraded(f"{reg}: no usable [[source]] entries")
         return SourceRegistry(
