@@ -32,7 +32,6 @@ build_binary() {
     --collect-all bm25s \
     --collect-submodules memex \
     --collect-submodules gnomon \
-    --collect-submodules orrery_heartbeat \
     --name "${name}" \
     --distpath "${BUILD_DIR}/dist" \
     --workpath "${BUILD_DIR}/work/${name}" \
@@ -48,9 +47,9 @@ build_binary "memex-sync" "scripts/memex_sync_entry.py"
 
 if [[ "${SKIP_SMOKE:-0}" != "1" ]]; then
   smoke_root="$(mktemp -d)"
-  CI=1 ORRERY_NO_UPDATE_CHECK=1 XDG_DATA_HOME="${smoke_root}/data" XDG_CACHE_HOME="${smoke_root}/cache" \
+  CI=1 XDG_DATA_HOME="${smoke_root}/data" XDG_CACHE_HOME="${smoke_root}/cache" \
     "${OUTPUT_DIR}/memex-${platform}-${arch}" --help >/dev/null
-  CI=1 ORRERY_NO_UPDATE_CHECK=1 XDG_DATA_HOME="${smoke_root}/data" XDG_CACHE_HOME="${smoke_root}/cache" \
+  CI=1 XDG_DATA_HOME="${smoke_root}/data" XDG_CACHE_HOME="${smoke_root}/cache" \
     "${OUTPUT_DIR}/memex-sync-${platform}-${arch}" --help >/dev/null
   rm -rf "${smoke_root}"
 fi
