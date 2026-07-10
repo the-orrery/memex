@@ -36,6 +36,11 @@ path = "~/projects/notes"
 2. 否则 `$KB_SOURCE_ROOT` 下的 `kb-sources.toml`。
 3. 都不可用时降级到内置示例源,并打印 warning。
 
+基础路径依次接受 `$KB_SOURCE_ROOT`、共享的 `$KB_WORKSPACE_ROOT`、registry
+中的 `source_root` / `workspace_root`。registry 同目录可放一个
+`<stem>.local.toml`（例如 `sources.local.toml`）覆盖已有 source 的机器本地
+`path` / `legacy`；它不新增逻辑 source，避免物理路径变化改写索引 identity。
+
 ## 外部服务
 
 semantic lane 依赖一个 OpenAI-compatible embedding endpoint 和一个 qdrant
@@ -47,17 +52,41 @@ semantic lane 依赖一个 OpenAI-compatible embedding endpoint 和一个 qdrant
   `/embedding-query/` 自动派生 `/embedding-sync/`,否则复用 `KB_SEARCH_EMBEDDING_URL`。
 - `KB_SEARCH_EMBEDDING_MODEL`:embedding model name。
 - `KB_SEARCH_EMBEDDING_DIMENSIONS`:embedding vector dimension。
-- `MEMEX_BEARER`:可选 bearer credential。
-- `MEMEX_CA_BUNDLE`:可选 CA bundle 路径。
+- `KB_SEARCH_BEARER_TOKEN`:可选 Qdrant bearer credential。
+- `KB_SEARCH_CA_BUNDLE`:可选 CA bundle 路径。
 
-## 安装和开发
+## 安装
+
+运行环境使用 [GitHub Releases](https://github.com/the-orrery/memex/releases) 中的
+自包含二进制，不需要 Python、`uv` 或本地源码仓。每个 release 提供
+`memex-<os>-<arch>`、`memex-sync-<os>-<arch>` 和 `SHA256SUMS`；安装器必须先按
+checksum 校验，再写入 PATH。
+
+当前构建目标是 macOS arm64 与 Linux x86_64；Linux 产物以 Ubuntu 22.04 为
+兼容基线。直接安装 macOS arm64 版本：
 
 ```sh
-uv tool install --force .
+base=https://github.com/the-orrery/memex/releases/latest/download
+curl -fL "$base/memex-darwin-arm64" -o /tmp/memex-darwin-arm64
+curl -fL "$base/memex-sync-darwin-arm64" -o /tmp/memex-sync-darwin-arm64
+curl -fL "$base/SHA256SUMS" -o /tmp/memex-SHA256SUMS
+(cd /tmp && grep -E '  memex(-sync)?-darwin-arm64$' memex-SHA256SUMS | shasum -a 256 -c -)
+install -m 0755 /tmp/memex-darwin-arm64 ~/.local/bin/memex
+install -m 0755 /tmp/memex-sync-darwin-arm64 ~/.local/bin/memex-sync
+```
+
+## 开发
+
+```sh
+uv sync --group dev
 uv run memex --help
 uv run memex-sync --help
 uv run pytest
 ```
+
+运行 `./scripts/build-release.sh` 可在 `dist/release/` 生成当前 OS/arch 的两个
+二进制。Pull request 会先在双平台构建和 smoke test；推送与 `pyproject.toml`
+版本一致的 `v*` tag 后才生成 `SHA256SUMS` 并发布不可变 release。
 
 常用命令:
 
