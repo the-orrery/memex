@@ -52,8 +52,8 @@ semantic lane 依赖一个 OpenAI-compatible embedding endpoint 和一个 qdrant
   `/embedding-query/` 自动派生 `/embedding-sync/`,否则复用 `KB_SEARCH_EMBEDDING_URL`。
 - `KB_SEARCH_EMBEDDING_MODEL`:embedding model name。
 - `KB_SEARCH_EMBEDDING_DIMENSIONS`:embedding vector dimension。
-- `MEMEX_BEARER`:可选 bearer credential。
-- `MEMEX_CA_BUNDLE`:可选 CA bundle 路径。
+- `KB_SEARCH_BEARER_TOKEN`:可选 Qdrant bearer credential。
+- `KB_SEARCH_CA_BUNDLE`:可选 CA bundle 路径。
 
 ## 安装
 
